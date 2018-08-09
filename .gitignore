@@ -102,3 +102,8 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# tensorflow model
+.meta
+.data-00000-of-00001
+.index
