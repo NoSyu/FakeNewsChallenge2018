@@ -11,7 +11,7 @@ D-DS Academy 2018
 - 소경민
 - 이세희
 - 정윤수
-- 함영인
+- [함영인](https://github.com/hutch24)
 
 ## Referenece
 - http://www.fakenewschallenge.org
