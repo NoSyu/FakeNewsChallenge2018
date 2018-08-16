@@ -1,4 +1,4 @@
-from implementation.implement_model_function_train_test import MLP_Classifier
+from implementation.implement_model_function_train_test_tfidf_5000 import MLP_Classifier
 import os
 
 base_dir = os.path.dirname(__file__)
