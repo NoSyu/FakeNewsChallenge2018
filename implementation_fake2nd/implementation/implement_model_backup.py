@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from features.feature_generator import make_tfidf_combined_feature, load_tfidf_y
+from feature_helpers.feature_generator import make_tfidf_combined_feature_5000, load_tfidf_y
 
 seed = 12345
 def weight_variable(name, shape):
@@ -29,7 +29,7 @@ mode = 'train'
 # mode = 'test'
 model_path = '../tf_model/ensemble_tfidf_5000_epoch70_n_fold_'
 
-X_data = make_tfidf_combined_feature(head_dir, body_dir)
+X_data = make_tfidf_combined_feature_5000(head_dir, body_dir)
 y_data = load_tfidf_y(label_dir)
 n_fold = 2
 # exit()

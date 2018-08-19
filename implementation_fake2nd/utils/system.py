@@ -11,7 +11,7 @@ def parse_params():
     if not params.clean_cache:
         return
 
-    dr = "features"
+    dr = "feature_helpers"
     for f in os.listdir(dr):
         if re.search('\.npy$', f):
             fname = os.path.join(dr, f)

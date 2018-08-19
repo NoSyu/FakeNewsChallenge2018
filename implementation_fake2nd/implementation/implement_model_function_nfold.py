@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from features.feature_generator import make_tfidf_combined_feature, load_tfidf_y
+from feature_helpers.feature_generator import make_tfidf_combined_feature_5000, load_tfidf_y
 from utils.score import report_score
 
 seed = 12345
@@ -47,7 +47,7 @@ def MLP_Classifier(row_body, row_stance, head_dir, body_dir, label_dir, learning
     init_bias = init_bias
     mode = mode
 
-    X_data = make_tfidf_combined_feature(row_body, row_stance, head_dir, body_dir, label_dir)
+    X_data = make_tfidf_combined_feature_5000(row_body, row_stance, head_dir, body_dir, label_dir)
     y_data = load_tfidf_y(label_dir)
     n_fold = n_fold
 
