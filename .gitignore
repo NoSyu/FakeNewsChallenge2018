@@ -109,3 +109,6 @@ venv.bak/
 .index
 
 .idea
+
+# pickle file
+.pkl
