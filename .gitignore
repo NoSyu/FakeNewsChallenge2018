@@ -109,3 +109,9 @@ venv.bak/
 .index
 
 .idea
+
+# pickle file
+.pkl
+
+# zip file
+.zip
