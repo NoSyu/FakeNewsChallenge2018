@@ -1,6 +1,6 @@
 #Adapted from https://github.com/FakeNewsChallenge/fnc-1/blob/master/scorer.py
 #Original credit - @bgalbraith
-
+import numpy as np
 LABELS = ['agree', 'disagree', 'discuss', 'unrelated']
 LABELS_RELATED = ['unrelated','related']
 RELATED = LABELS[0:3]
@@ -28,20 +28,30 @@ def score_submission(gold_labels, test_labels):
 
 def print_confusion_matrix(cm):
     lines = []
-    header = "|{:^11}|{:^11}|{:^11}|{:^11}|{:^11}|".format('', *LABELS)
+    precision = []
+    recall = []
+
+    for i in range(len(cm)):
+        precision.append(cm[i][i]/sum(cm[i]))
+        recall.append(cm[i][i]/sum(np.array(cm)[:, i]))
+    print(precision, recall)
+
+
+    header = "|{:^11}|{:^11}|{:^11}|{:^11}|{:^11}|{:^11}|".format('', *LABELS, 'precision')
     line_len = len(header)
     lines.append("-"*line_len)
     lines.append(header)
     lines.append("-"*line_len)
-
+    print(cm)
     hit = 0
     total = 0
     for i, row in enumerate(cm):
         hit += row[i]
         total += sum(row)
-        lines.append("|{:^11}|{:^11}|{:^11}|{:^11}|{:^11}|".format(LABELS[i],
-                                                                   *row))
+        lines.append("|{:^11}|{:^11}|{:^11}|{:^11}|{:^11}|{:^11.4f}|".format(LABELS[i],
+                                                                   *row, precision[i]))
         lines.append("-"*line_len)
+    lines.append("|{:^11}|{:^11.4f}|{:^11.4f}|{:^11.4f}|{:^11.4f}|{:^11}|".format('recall',recall[0], recall[1], recall[2], recall[3], ''))
     print('\n'.join(lines))
 
 
@@ -55,7 +65,7 @@ def report_score(actual,predicted):
 
 
 if __name__ == "__main__":
-    actual = [0,0,0,0,1,1,0,3,3]
-    predicted = [0,0,0,0,1,1,2,3,3]
+    actual = [0,0,0,0,1,1,0,3,3,1,2,3,]
+    predicted = [0,0,0,0,1,1,2,3,3,0, 3, 2, 1]
 
     report_score([LABELS[e] for e in actual],[LABELS[e] for e in predicted])

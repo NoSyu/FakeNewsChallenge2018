@@ -107,3 +107,11 @@ venv.bak/
 .meta
 .data-00000-of-00001
 .index
+
+.idea
+
+# pickle file
+.pkl
+
+# zip file
+.zip
