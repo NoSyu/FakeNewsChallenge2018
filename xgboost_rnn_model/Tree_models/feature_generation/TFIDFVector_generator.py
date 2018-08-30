@@ -6,7 +6,7 @@ from scipy.sparse import hstack
 
 class TFIDFVector_generator:
 
-    def __init__(self, max_features=5000, analyzer='word', ngram_range=(1, 1), stop_words='english'):
+    def __init__(self, analyzer='word', ngram_range=(1, 3), stop_words='english'):
         """
         TFIDFVectorizer의 초기화하는 생성자
 
@@ -16,9 +16,9 @@ class TFIDFVector_generator:
         :param stop_words: 영어의 stopword를 설정하는 파라미터. 'None', 'english'의 옵션이 선택 가능.
         :param norm: term Vector의 정규화 방식을 설정하는 파라미터. 'l1', 'l2', 'None'으로 설정 가능.
         """
-        self.vectorizer = TfidfVectorizer(max_features=max_features, analyzer=analyzer, ngram_range=ngram_range,
+        self.vectorizer = TfidfVectorizer(analyzer=analyzer, ngram_range=ngram_range,
                                           stop_words=stop_words)
-    def fit(self, head, body):
+    def fit(self, head, body, include_test = True):
         """
         TFIDFVectorizer를 학습시키는 메소드
 
@@ -28,6 +28,11 @@ class TFIDFVector_generator:
         """
         print('Fitting vectorizer...')
         combined_head_body = [h+". "+b for h, b in zip(head, body)]
+        if include_test:
+            t_head, t_body = get_head_body_tuples_test(data_path='../../data')
+            combined_test_head_body = [h + ". " + b for h, b in zip(t_head, t_body)]
+            combined_head_body.extend(combined_test_head_body)
+
         self.vectorizer.fit(combined_head_body)
         print('Fitting vectorizer finished!')
         print('vocab_len : ', len(self.vectorizer.vocabulary_))
@@ -78,7 +83,8 @@ class TFIDFVector_generator:
         print('Transforming body finish!')
 
         print('Combining features...')
-        combined = hstack((transformed_head, transformed_body), format='csr')
+        combined = np.concatenate((transformed_head.toarray(), transformed_body.toarray()), axis=1)
+        combined = sparse.csr_matrix(combined)
         print('Combining features finish!')
 
         return transformed_head, transformed_body, combined
@@ -123,12 +129,11 @@ if __name__ == "__main__":
     head_test, body_test = get_head_body_tuples_test(data_path='../../data')
 
     model_path = '../../pickled_data'
-    max_features = 5000
-    filename = 'tfidf_'+str(max_features)+'_vecterizer_model.pkl'
-    # filename = 'tfidf_1st_team_vecterizer_model.pkl'
+    max_features = 200000
+    # filename = 'tfidf_'+str(max_features)+'_vecterizer_model.pkl'
+    filename = 'tfidf_1st_vecterizer_model.pkl'
 
-    tfidf = TFIDFVector_generator\
-        (max_features=max_features, analyzer='word', ngram_range=(1, 1), stop_words='english')
+    tfidf = TFIDFVector_generator(analyzer='word', ngram_range=(1, 3), stop_words='english')
     tfidf.fit(head, body)
     tfidf.save_model(model_path=model_path, filename=filename)
 
@@ -137,15 +142,15 @@ if __name__ == "__main__":
 
     # 저장된 TFIDF vector가 있으면 바로 해당 데이터로 training 하면 됨
     # tfidf.transform_and_save_data(head, body, save_path=model_path,
-    #                               filename='tfidf_1st_'+str(max_features))
+    #                               filename='tfidf_feat_'+str(max_features))
     #
     # tfidf.transform_and_save_data(head_test, body_test, save_path=model_path,
-    #                               filename='tfidf_1st_'+str(max_features)+'_test')
+    #                               filename='tfidf_feat_'+str(max_features))
     tfidf.transform_and_save_data(head, body, save_path=model_path,
-                                  filename='tfidf_'+str(max_features))
+                                  filename='tfidf_feat_1st_train_include_test')
 
     tfidf.transform_and_save_data(head_test, body_test, save_path=model_path,
-                                  filename='tfidf_'+str(max_features)+'_test')
+                                  filename='tfidf_feat_1st_test_include_test')
     # cos similarity 모델을 만들기 위해서는 메모리가 터지지 않게
     # CosineSim_generator의 함수들을 이용해 head, body pkl 파일을 읽어서 만들면 됩니다.
 

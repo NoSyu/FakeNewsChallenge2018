@@ -11,8 +11,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from keras_model.utils.dataset import DataSet
 # from keras_model.utils.generate_test_splits import kfold_split
 import numpy as np
-
-# def tfidf_100(head, body, path, filename):
+from keras_model.feature_helper.misc import create_embedding_lookup_pandas, \
+    text_to_sequences_fixed_size, load_embedding_pandas
 
 def word_ngrams_concat(headlines, bodies, max_features=200, ngram_range=(1, 1),
                        use_idf=False, norm='l2', lemmatize=False,
@@ -191,8 +191,6 @@ def create_word_ngram_vocabulary(ngram_range=(1,1), max_features=100, lemmatize=
     print("vocab length: " + str(len(vocab)))
     return vocab
 
-
-## Benjamins LSTM features:
 def single_flat_LSTM_50d_100(headlines, bodies, name='train'):
     # Following the guide at https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html
     # see also documentation https://keras.io/layers/embeddings/
@@ -206,8 +204,6 @@ def single_flat_LSTM_50d_100(headlines, bodies, name='train'):
     :param fold:
     :return:
     """
-    from keras_model.feature_helper.misc import create_embedding_lookup_pandas, \
-        text_to_sequences_fixed_size, load_embedding_pandas
 
     #########################
     # PARAMETER DEFINITIONS #
@@ -304,6 +300,99 @@ def single_flat_LSTM_50d_100(headlines, bodies, name='train'):
         print("Save sequences as ../features/sequences_body_" + name + ".pkl")
 
     return head_sequences, body_sequences
+
+## Benjamins LSTM features:
+def single_flat_LSTM_50d_100_combined_seq(headlines, bodies, name='train'):
+    # Following the guide at https://blog.keras.io/using-pre-trained-word-embeddings-in-a-keras-model.html
+    # see also documentation https://keras.io/layers/embeddings/
+
+    """
+    Improve on former LSTM features by dividing the tokens much better on the documents and evidences for a claim, in order to remove sparsitiy
+    and add more useful information into the vectors.
+    :param claims:
+    :param evidences:
+    :param orig_docs:
+    :param fold:
+    :return:
+    """
+
+    #########################
+    # PARAMETER DEFINITIONS #
+    #########################
+    method_name = "single_flat_LSTM_50d_100"
+    # location path for features
+    FEATURES_DIR = "%s/features/" % (path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
+    PARAM_DICT_FILENAME = method_name + "_param_dict.pkl"
+
+    param_dict = {
+        "MAX_NB_WORDS": 50000,  # size of the vocabulary
+
+        # sequence lengths
+        "MAX_SEQ_LENGTH": 100,  # 1000
+
+        # embedding specific values
+        "EMBEDDING_DIM": 50,  # dimension of the GloVe embeddings
+        "GLOVE_ZIP_FILE": 'glove.twitter.27B.zip',
+        "GLOVE_FILE": 'glove.twitter.27B.50d.txt',
+
+        # embedding file names
+        "EMBEDDING_FILE": method_name + "_embedding.npy",
+
+        # vocab file names
+        "VOCAB_FILE": method_name + "_vocab.pkl",
+    }
+
+    ###############################################
+    # GET VOCABULARY AND PREPARE EMBEDDING MATRIX #
+    ###############################################
+
+    # load GloVe embeddings
+    GloVe_vectors = load_embedding_pandas(param_dict["GLOVE_ZIP_FILE"], param_dict["GLOVE_FILE"])
+
+    # load all claims, orig_docs and evidences
+    all_heads, all_bodies = get_head_body_tuples(include_holdout=True)
+    all = all_heads
+    all.extend(all_bodies)
+
+    # Comment out for clean ablation checks
+    # add the unlabeled test data words to the BoW of test+train+holdout data
+    h_unlbled_test, b_unlbled_test = get_head_body_tuples_test()
+    all.extend(h_unlbled_test)
+    all.extend(b_unlbled_test)
+
+    # create and save the embedding matrices for claims, orig_docs and evidences
+    vocab = create_embedding_lookup_pandas(all, param_dict["MAX_NB_WORDS"], param_dict["EMBEDDING_DIM"],
+                                           GloVe_vectors, param_dict["EMBEDDING_FILE"], param_dict["VOCAB_FILE"],
+                                           init_zeros=False,
+                                           add_unknown=True, rdm_emb_init=True, tokenizer=nltk.word_tokenize)
+
+    # unload GloVe_vectors in order to make debugging possible
+    del GloVe_vectors
+
+    #################################################
+    # Create sequences and embedding for the claims #
+    #################################################
+    print("Create sequences and embedding for the heads")
+
+    concatenated = []
+    for i in range(len(headlines)):
+        concatenated.append(headlines[i] + ". " + bodies[i])
+
+    # replace tokens of claims by vocabulary ids - the ids refer to the index of the embedding matrix which holds the word embedding for this vocab word
+    sequences = text_to_sequences_fixed_size(concatenated, vocab, param_dict["MAX_SEQ_LENGTH"], save_full_text=False,
+                                             take_full_claim=True)
+
+    #################################################
+    # SAVE PARAM_DICT AND CONCATENATE TRAINING DATA #
+    #################################################
+
+    # save param_dict
+    with open(FEATURES_DIR + PARAM_DICT_FILENAME, 'wb') as f:
+        pickle.dump(param_dict, f, pickle.HIGHEST_PROTOCOL)
+    print("Save PARAM_DICT as " + FEATURES_DIR + PARAM_DICT_FILENAME)
+
+    return sequences
+
 
 if __name__ == "__main__":
     ## make sequence train data
