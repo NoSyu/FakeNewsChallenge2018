@@ -4,7 +4,7 @@ import numpy as np
 from scipy import sparse
 class CountVector_generator:
 
-    def __init__(self, max_features=2500, analyzer='word', ngram_range=(1, 1), stop_words='english'):
+    def __init__(self, analyzer='word', ngram_range=(1, 3), stop_words='english'):
         """
         CountVectorizer의 초기화하는 생성자
 
@@ -14,9 +14,9 @@ class CountVector_generator:
         :param stop_words: 영어의 stopword를 설정하는 파라미터. 'None', 'english'의 옵션이 선택 가능.
         """
         self.max_featrues = max_features
-        self.vectorizer = CountVectorizer(max_features=max_features, analyzer=analyzer, ngram_range=ngram_range,
+        self.vectorizer = CountVectorizer(analyzer=analyzer, ngram_range=ngram_range,
                                           stop_words=stop_words)
-    def fit(self, head, body):
+    def fit(self, head, body, include_test = True):
         """
         CountVectorizer를 학습시키는 메소드
 
@@ -25,8 +25,15 @@ class CountVector_generator:
         :return:
         """
         print('Fitting vectorizer...')
+
         combined_head_body = [h + ". " + b for h, b in zip(head, body)]
+        if include_test:
+            t_head, t_body = get_head_body_tuples_test(data_path='../../data')
+            combined_test_head_body = [h + ". " + b for h, b in zip(t_head, t_body)]
+            combined_head_body.extend(combined_test_head_body)
+
         self.vectorizer.fit(combined_head_body)
+        print('vocab_size : ', len(self.vectorizer.vocabulary_))
         print('Fitting vectorizer finished!')
 
     def save_model(self, model_path, filename):
@@ -94,8 +101,7 @@ class CountVector_generator:
         print('Transforming body...')
         transformed_body = self.vectorizer.transform(body)
         print('Transforming body finish!')
-        combined = sparse.csr_matrix(
-            np.concatenate((transformed_head.toarray(), transformed_body.toarray()), axis=1))
+        combined = sparse.hstack((transformed_head, transformed_body), format='csr')
 
         head_file_name = save_path+"/"+filename+"_head.pkl"
         body_file_name = save_path+"/"+filename+"_body.pkl"
@@ -115,13 +121,13 @@ if __name__ == "__main__":
 
     max_features = 5000 # 메모리가 터질시 max_features를 낮게 조정
 
-    filename = 'count_1st_'+str(max_features)+'_vecterizer_model.pkl'
+    filename = 'count_1st_vecterizer_model.pkl'
 
     head, body = get_head_body_tuples(data_path='../../data')
     head_test, body_test = get_head_body_tuples_test(data_path='../../data')
 
     count_vectorizer = CountVector_generator\
-        (max_features=max_features, analyzer='word', ngram_range=(1, 3), stop_words='english')
+        (analyzer='word', ngram_range=(1, 3), stop_words='english')
 
     count_vectorizer.fit(head, body)
     # 저장된 Vecterizer 모델이 있으면 load_model을 사용하면 됨
@@ -130,6 +136,6 @@ if __name__ == "__main__":
 
     # 저장된 TFIDF vector가 있으면 바로 해당 데이터로 training 하면 됨
     # 변환된 train file 저장
-    count_vectorizer.transform_and_save_data(head, body, save_path=model_path, filename='count_1st' + str(max_features))
+    count_vectorizer.transform_and_save_data(head, body, save_path=model_path, filename='count_1st_train_include_test')
     # 변환된 test file 저장
-    count_vectorizer.transform_and_save_data(head_test, body_test, save_path=model_path, filename='count_1st' + str(max_features)+'_test')
+    count_vectorizer.transform_and_save_data(head_test, body_test, save_path=model_path, filename='count_1st_test_include_test')
