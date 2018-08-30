@@ -172,15 +172,6 @@ def main():
                     print('입력 오류입니다.')
                     break
             elif num == 2:
-                try:
-                    index = int(input('파일 Index 번호를 입력하세요 : '))
-                    data = test_dataset[index]
-                    print('head : {}'.format(data['head']))
-                    print('body : {}'.format(data['body']))
-                except:
-                    print('입력 오류입니다.')
-                    break
-            elif num == 2:
                 feature = xgb.DMatrix(test_features_xgb, label=test_y)
 
                 xgb_pred = xgb_model.predict(feature)
