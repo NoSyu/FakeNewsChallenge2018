@@ -1,4 +1,4 @@
-## XGBoost, RNN ensemble model
+## XGBoost, RNN, Logistic regression stacking ensemble model
 
 - 이 프로그램은 Fake News Dectection 2017의 데이터를 이용해 학습, 존재하는 test 데이터로 검출 성능을 확인하는 프로그램입니다.
 
@@ -19,7 +19,7 @@ pip install -r requirements.txt
 </code>
 </pre>
 
-다음의 feature 파일을 받아 압축해제하고 3개의 파일을 xgboost_rnn_model 폴더로 복사 또는 이동.
+다음의 feature 파일을 받아 압축해제하고 4개의 폴더를 xgboost_rnn_model 폴더로 복사, 붙여넣기.
 
 https://drive.google.com/file/d/1y51XCVP25SI0yDQeo1RO8hMsVDFkVajP/view?usp=sharing
 
@@ -27,7 +27,7 @@ xgboost_rnn_model 경로에서
 <pre>
 <code>
 
-python3.5 demo_main.py
+python3.5 stacking_demo_main.py
 
 </code>
 </pre>
