@@ -1,17 +1,20 @@
-import zipfile
-import numpy as np
 import os.path as path
-from sklearn.feature_extraction.text import TfidfVectorizer
 import pickle
+import zipfile
+
 import nltk
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 
-EMBEDDINGS_DIR = "../embedding/"
-FEATURES_DIR = "../rnn_features/"
+EMBEDDINGS_DIR = "news/ml_model/embedding/"
+FEATURES_DIR = "news/ml_model/rnn_features/"
+
 
 def nltk_corpus_download():
     nltk.download('stopwords')
     nltk.download('punkt')
+
 
 def load_embedding_pandas(ZIP_FILE, FILE, type="w2v"):
     """
@@ -26,14 +29,36 @@ def load_embedding_pandas(ZIP_FILE, FILE, type="w2v"):
     # create embedding dict https://stackoverflow.com/questions/37793118/load-pretrained-glove-vectors-in-python
     with zipfile.ZipFile(EMBEDDINGS_DIR + ZIP_FILE) as z:
         if type == "w2v":
-            embedding = pd.read_table(z.open(FILE), sep=" ", index_col=0, header=None, quoting=csv.QUOTE_NONE, skiprows=1)
+            embedding = pd.read_table(
+                z.open(FILE),
+                sep=" ",
+                index_col=0,
+                header=None,
+                quoting=csv.QUOTE_NONE,
+                skiprows=1
+            )
         else:
-            embedding = pd.read_table(z.open(FILE), sep=" ", index_col=0, header=None, quoting=csv.QUOTE_NONE)
-        print('Found %s word vectors in GloVe embeddings.' % len(embedding.index))
+            embedding = pd.read_table(
+                z.open(FILE),
+                sep=" ",
+                index_col=0,
+                header=None,
+                quoting=csv.QUOTE_NONE
+            )
+        print(
+            'Found %s word vectors in GloVe embeddings.' % len(embedding.index)
+        )
 
     return embedding
 
-def text_to_sequences_fixed_size(texts, vocab, MAX_SENT_LENGTH, save_full_text=False, take_full_claim = False):
+
+def text_to_sequences_fixed_size(
+    texts,
+    vocab,
+    MAX_SENT_LENGTH,
+    save_full_text=False,
+    take_full_claim = False
+):
     """
     Turns sentences of claims into sequences of indices provided by the given vocab.
     Unknown words will get an extra index, if
@@ -44,7 +69,7 @@ def text_to_sequences_fixed_size(texts, vocab, MAX_SENT_LENGTH, save_full_text=F
     :param MAX_SENT_LENGTH:
     :return:
     """
-    nltk_corpus_download()
+    # nltk_corpus_download()
 
     data = np.zeros((len(texts), MAX_SENT_LENGTH), dtype='int32')
 
@@ -81,8 +106,19 @@ def text_to_sequences_fixed_size(texts, vocab, MAX_SENT_LENGTH, save_full_text=F
     else:
         return data
 
-def create_embedding_lookup_pandas(text_list, max_nb_words, embedding_dim, embedding,
-                            embedding_lookup_name, embedding_vocab_name, rdm_emb_init=False, add_unknown=False, tokenizer=None, init_zeros = False):
+
+def create_embedding_lookup_pandas(
+    text_list,
+    max_nb_words,
+    embedding_dim,
+    embedding,
+    embedding_lookup_name,
+    embedding_vocab_name,
+    rdm_emb_init=False,
+    add_unknown=False,
+    tokenizer=None,
+    init_zeros = False
+):
     """
     Creates the claim embedding lookup table if it not already exists and returns the vocabulary for it
     :param text_list:
@@ -94,9 +130,10 @@ def create_embedding_lookup_pandas(text_list, max_nb_words, embedding_dim, embed
     :return:
     """
     #del GloVe_vectors
-    if not path.exists(FEATURES_DIR + embedding_lookup_name) or not path.exists(FEATURES_DIR + embedding_vocab_name):
+    if not path.exists(FEATURES_DIR + embedding_lookup_name) or \
+            not path.exists(FEATURES_DIR + embedding_vocab_name):
         vectorizer = TfidfVectorizer(ngram_range=(1, 1), stop_words=None, tokenizer=tokenizer,
-                                            max_features=max_nb_words, use_idf=True)
+                                     max_features=max_nb_words, use_idf=True)
         vectorizer.fit_transform(text_list)
         vocab = vectorizer.vocabulary_
 
@@ -110,7 +147,8 @@ def create_embedding_lookup_pandas(text_list, max_nb_words, embedding_dim, embed
 
         # prepare embedding - create matrix that holds the glove vector for each vocab entry
         if rdm_emb_init == True:
-            embedding_lookup = np.random.random((len(vocab) + 1, embedding_dim))
+            embedding_lookup = \
+                np.random.random((len(vocab) + 1, embedding_dim))
             zero_vec = np.zeros((embedding_dim))
             embedding_lookup[0] = zero_vec # for masking
         else:
@@ -119,7 +157,11 @@ def create_embedding_lookup_pandas(text_list, max_nb_words, embedding_dim, embed
         if init_zeros == False:
             for word, i in vocab.items():
                 if word == "UNKNOWN":
-                    embedding_vector = np.random.uniform(low=-0.05, high=0.05, size=embedding_dim)
+                    embedding_vector = np.random.uniform(
+                        low=-0.05,
+                        high=0.05,
+                        size=embedding_dim
+                    )
                     #print(embedding_vector)
                 else:
                     try:
@@ -136,7 +178,11 @@ def create_embedding_lookup_pandas(text_list, max_nb_words, embedding_dim, embed
         with open(FEATURES_DIR + embedding_vocab_name, 'wb') as f:
             pickle.dump(vocab, f, pickle.HIGHEST_PROTOCOL)
 
-        print("Embedding lookup table shape for " + embedding_lookup_name + " is: " + str(embedding_lookup.shape))
+        print(
+            "Embedding lookup table shape for "
+            + embedding_lookup_name
+            + " is: " + str(embedding_lookup.shape)
+        )
     else:
         with open(FEATURES_DIR + embedding_vocab_name, "rb") as f:
             vocab = pickle.load(f)

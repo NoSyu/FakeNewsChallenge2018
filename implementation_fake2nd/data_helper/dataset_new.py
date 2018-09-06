@@ -1,8 +1,7 @@
 import csv
-from data_helper.data_helper import data_prepro
 import numpy as np
 from tqdm import tqdm
-
+from data_helper.data_helper import data_prepro
 
 class Dataset():
     """
@@ -41,8 +40,8 @@ class Dataset():
                 body_bar.set_description("Processing {} pre-processing".format('body'))
                 id, body = line
                 id = int(id)
-                # body_tmp[id] = data_prepro(body)
-                body_tmp[id] = body
+                body_tmp[id] = data_prepro(body)
+                # body_tmp[id] = body
 
         with open(self.stance_path, encoding='utf-8') as file:
             reader = csv.reader(file, delimiter=',')
@@ -52,7 +51,7 @@ class Dataset():
             for line in head_bar:
                 head_bar.set_description("Processing {} pre-processing".format('head'))
                 headline, id, stance = line
-                # headline = data_prepro(headline)
+                headline = data_prepro(headline)
                 id = int(id)
                 self.data.append([headline, body_tmp[id], self.stance2idx[stance]])
 
@@ -62,6 +61,30 @@ class Dataset():
         head, body, stance = self.data[:, 0], self.data[:, 1], np.eye(4)[np.array(self.data[:, 2], dtype=np.int64)]
         return head, body, stance
 
+    def read_tfidf_data(self):
+        h, b = [], []
+
+        with open(self.body_path, encoding='utf-8') as file:
+            reader = csv.reader(file, delimiter=',')
+            next(reader)  ## 첫줄 제외
+            body_bar = tqdm(reader)
+            for line in body_bar:
+                body_bar.set_description("Processing {} pre-processing".format('body'))
+                id, body = line
+                b.append(data_prepro(body))
+
+        with open(self.stance_path, encoding='utf-8') as file:
+            reader = csv.reader(file, delimiter=',')
+            next(reader)    ## 첫줄 제외
+
+            head_bar = tqdm(reader)
+            for line in head_bar:
+                head_bar.set_description("Processing {} pre-processing".format('head'))
+                headline, id, stance = line
+                headline = data_prepro(headline)
+                h.append(headline)
+
+        return h, b
 
     def read_combine_test(self):
         """
