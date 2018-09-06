@@ -24,6 +24,18 @@ class GRUVectorizer:
         }
 
 
+    def fit(self, X):
+        self.Glove = load_embedding_pandas(self.param_dict["GLOVE_ZIP_FILE"], self.param_dict["GLOVE_FILE"])
+        data = [x[0] + ". " + x[1] for x in X]
+
+        print('Load GloVe embedding file...')
+        vocab = create_embedding_lookup_pandas(data, self.param_dict["MAX_NB_WORDS"], self.param_dict["EMBEDDING_DIM"],
+                                               self.GloVe, self.param_dict["EMBEDDING_FILE"],
+                                               self.param_dict["VOCAB_FILE"],
+                                               init_zeros=False, add_unknown=True, rdm_emb_init=True,
+                                               tokenizer=nltk.word_tokenize)
+        print('Done.')
+
     """
         GRU feature의 경우 미리 pre-train된 GloVe 벡터를 불러와 이용하는 방식이므로 fit이 필요하지 않습니다.
     """
@@ -42,16 +54,16 @@ class GRUVectorizer:
         output shape : (n, 100)
         """
         print('Load GloVe embedding file...')
-        GloVe_vectors = load_embedding_pandas(self.param_dict["GLOVE_ZIP_FILE"], self.param_dict["GLOVE_FILE"])
+        self.GloVe = load_embedding_pandas(self.param_dict["GLOVE_ZIP_FILE"], self.param_dict["GLOVE_FILE"])
         print('Done.')
         
         data = [x[0]+". "+x[1] for x in X]
 
 
         vocab = create_embedding_lookup_pandas(data, self.param_dict["MAX_NB_WORDS"], self.param_dict["EMBEDDING_DIM"],
-                                               GloVe_vectors, self.param_dict["EMBEDDING_FILE"], self.param_dict["VOCAB_FILE"],
+                                               self.GloVe, self.param_dict["EMBEDDING_FILE"], self.param_dict["VOCAB_FILE"],
                                                init_zeros=False, add_unknown=True, rdm_emb_init=True, tokenizer=nltk.word_tokenize)
-        del GloVe_vectors
+        del self.GloVe
 
         sequences = text_to_sequences_fixed_size(data, vocab, self.param_dict["MAX_SEQ_LENGTH"],
                                                  save_full_text=False, take_full_claim=True)
